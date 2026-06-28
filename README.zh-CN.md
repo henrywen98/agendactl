@@ -13,6 +13,27 @@
 
 ---
 
+## 实战演示
+
+```text
+你    ▸ 这周有什么会?
+
+agent ▸ agendactl calendar list-events --from 2026-06-29T00:00:00 --to 2026-07-06T00:00:00
+      ← {"_iso":"2026-06-29","items":[
+           {"summary":"Funda Sales & Engineer sync","calendar":"工作",
+            "start":"2026-07-02T01:00:00Z","end":"2026-07-02T01:30:00Z"} ]}
+      这周有一个会:
+        • 周四 07-02,09:00–09:30 — Funda Sales & Engineer sync(工作)
+
+你    ▸ 提醒我明天 9 点交报告
+
+agent ▸ agendactl reminders create --list 任务 --name "交报告" --due 2026-06-30T09:00:00
+      ← {"id":"…","name":"交报告","list":"任务","due":"2026-06-30T01:00:00.000Z"}
+      已加到「任务」清单,明天 09:00 到期。
+```
+
+agent 读 SKILL.md,只传参调 `agendactl`,解析 JSON,再用自然语言回答——全程不写代码、不碰 EventKit。
+
 ## 它是什么
 
 一个 [agent **Skill**](https://github.com/VoltAgent/awesome-agent-skills):一个带 `SKILL.md`(告诉 agent 何时、如何使用)的目录,外加 `scripts/` 里一个**预编译、已签名的 universal 二进制**。装上这个目录,任意支持 skill 的 agent——Claude Code / Codex / Cursor / Gemini CLI / pi——就能管你的日历和提醒。同一个二进制也是普通 CLI,你自己或 cron/脚本都能直接调。

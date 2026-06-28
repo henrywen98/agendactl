@@ -13,6 +13,28 @@
 
 ---
 
+## In action
+
+```text
+you  ▸ what meetings do I have this week?
+
+agent ▸ agendactl calendar list-events --from 2026-06-29T00:00:00 --to 2026-07-06T00:00:00
+      ← {"_iso":"2026-06-29","items":[
+           {"summary":"Funda Sales & Engineer sync","calendar":"Work",
+            "start":"2026-07-02T01:00:00Z","end":"2026-07-02T01:30:00Z"} ]}
+      This week you have one meeting:
+        • Thu 07-02, 09:00–09:30 — Funda Sales & Engineer sync (Work)
+
+you  ▸ remind me to send the report at 9am tomorrow
+
+agent ▸ agendactl reminders create --list Tasks --name "Send report" --due 2026-06-30T09:00:00
+      ← {"id":"…","name":"Send report","list":"Tasks","due":"2026-06-30T01:00:00.000Z"}
+      Done — added "Send report" to Tasks, due tomorrow 09:00.
+```
+
+The agent reads the SKILL.md, calls `agendactl` with arguments, parses the JSON, and answers
+in plain language. It never writes code or touches EventKit directly.
+
 ## What it is
 
 A [Claude/agent **Skill**](https://github.com/VoltAgent/awesome-agent-skills): a folder with a `SKILL.md` (so the agent knows when and how to use it) plus a **prebuilt, signed universal binary** in `scripts/`. Install the folder, and any skill-aware agent — Claude Code, Codex, Cursor, Gemini CLI, pi — can manage your Calendar and Reminders. The same binary is a normal CLI you can run yourself or from cron/scripts.
