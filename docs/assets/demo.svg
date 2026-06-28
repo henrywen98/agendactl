@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 312" role="img" aria-labelledby="t d">
+  <title id="t">agendactl demo</title>
+  <desc id="d">An agent answers "what meetings do I have this week?" by running agendactl calendar list-events, then creates a reminder with agendactl reminders create — calling the CLI and parsing its JSON, never writing code.</desc>
+
+  <rect x="8" y="8" width="804" height="296" rx="10" fill="#1e2127" stroke="#2c313a" stroke-width="1"/>
+
+  <!-- window chrome -->
+  <circle cx="34" cy="30" r="6" fill="#ff5f56"/>
+  <circle cx="54" cy="30" r="6" fill="#febc2e"/>
+  <circle cx="74" cy="30" r="6" fill="#28c840"/>
+  <text x="410" y="34" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13" fill="#8b929e">agendactl</text>
+  <line x1="8" y1="48" x2="812" y2="48" stroke="#2c313a" stroke-width="1"/>
+
+  <!-- transcript -->
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13.5">
+    <text x="24" y="78"><tspan fill="#5ef08c">you  ▸ </tspan><tspan fill="#f0f0f0">what meetings do I have this week?</tspan></text>
+    <text x="24" y="103"><tspan fill="#7d8590">agent ▸ </tspan><tspan fill="#8be9fd">agendactl calendar list-events --from … --to …</tspan></text>
+    <text x="89" y="128" fill="#6272a4">← {"_iso":"2026-06-29","items":[ … ]}</text>
+    <text x="89" y="153" fill="#c9d1d9">Thu 07-02, 09:00–09:30 — Design review (Work)</text>
+
+    <text x="24" y="190"><tspan fill="#5ef08c">you  ▸ </tspan><tspan fill="#f0f0f0">remind me to send the report at 9am tomorrow</tspan></text>
+    <text x="24" y="215"><tspan fill="#7d8590">agent ▸ </tspan><tspan fill="#8be9fd">agendactl reminders create --list Tasks --name "Send report" --due …</tspan></text>
+    <text x="89" y="240" fill="#6272a4">← {"id":"…","due":"2026-06-30T01:00:00Z"}</text>
+    <text x="89" y="265" fill="#c9d1d9">Done — added "Send report" to Tasks, due tomorrow 09:00.</text>
+  </g>
+</svg>

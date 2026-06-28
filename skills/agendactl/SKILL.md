@@ -1,16 +1,16 @@
 ---
 name: agendactl
 description: >-
-  Read & write macOS Calendar events and Reminders/to-dos via the bundled `agendactl` CLI (EventKit).
-  Use whenever the user wants to add, list, change, complete, or delete a calendar event or a reminder;
-  see what's on a day or this week; reschedule; change a meeting's time/location; or filter by
-  date/list/calendar — even if the words "calendar"/"reminder" aren't said. Examples: "remind me to
-  send the report", "what meetings this week", "move the standup to Wednesday", "mark it done",
-  "cancel that event". Two domains, one CLI, route by intent: CALENDAR = events with a start/end
-  interval (meetings; no "complete") → `agendactl calendar …`; REMINDERS = to-dos with a due date that
-  can be completed → `agendactl reminders …`. "Remind me to X"/"to-do"/"mark complete" → reminders;
-  "add a meeting"/"3–4pm"/"this week's schedule" → calendar. Only call the CLI with arguments — never
-  write scripts or touch EventKit/system APIs.
+  Read & write the local macOS Calendar app and Reminders app on this Mac (Apple EventKit,
+  iCloud-synced) via the bundled `agendactl` CLI. Use this skill for any request to add, list, view,
+  change, reschedule, complete, or delete a calendar event or a reminder/to-do on this machine — e.g.
+  "remind me to send the report", "what meetings do I have this week", "move the standup to Wednesday",
+  "mark it done", "cancel that event", "what's on tomorrow" — even when the words "calendar" or
+  "reminder" aren't used. This is macOS-native Apple Calendar/Reminders, not Google, Outlook, or
+  Feishu/Lark, and not a generic task app. Always drive it through `agendactl` with arguments; never
+  write osascript/AppleScript/JXA or shell out to these apps another way. Calendar = timed events with
+  a start/end interval (no "complete"); reminders = to-dos with a due date that can be completed —
+  route by intent.
 ---
 
 # macOS Calendar & Reminders automation (agendactl)
@@ -32,8 +32,9 @@ The binary ships **inside this skill** at `scripts/agendactl`. Resolve it in thi
    this skill). No install step beyond having the skill folder is required.
 
 Subcommands and flags are identical either way. Do not `find` the whole disk for it, and do not
-substitute another tool (Google Calendar, a separate task app): this machine's Calendar/Reminders
-data lives only in macOS, and only `agendactl` reads it.
+substitute another tool (Google Calendar, Outlook, Feishu/Lark, or a separate task app): this drives
+the Apple Calendar.app / Reminders.app on this Mac (iCloud-synced), and only `agendactl` reads that
+data.
 
 ## Design notes (read first)
 
@@ -44,8 +45,10 @@ data lives only in macOS, and only `agendactl` reads it.
   tomorrow", read the date from any `agendactl` response's `._iso` field (e.g. `2026-06-29`). Do not
   call `date` for it and do not guess — the host's reported "today" can be stale or wrong, and
   writing an event to yesterday drops it out of the calendar view.
-- **CLI-only.** Only call `agendactl <app> …` with arguments. Never write code, never touch
-  JXA/EventKit. If something is not reachable, say "not supported yet" rather than inventing it.
+- **CLI-only.** Only call `agendactl <app> …` with arguments. Never write code; never use
+  osascript/AppleScript/JXA or touch EventKit directly — for macOS Calendar/Reminders, `agendactl` is
+  the tool, even for a one-liner. If something is not reachable, say "not supported yet" rather than
+  inventing it.
 - **List the containers before writing.** Run `calendars` / `lists` first to get the real
   container names (the response also returns `_iso`, handy for building "today").
 

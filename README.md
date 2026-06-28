@@ -4,6 +4,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-black?logo=apple)
 
+<p align="center"><img src="docs/assets/demo.svg" alt="agendactl: an agent answers a calendar question and creates a reminder by calling the agendactl CLI and parsing its JSON" width="760"></p>
+
 **An installable agent skill that lets any AI agent read & write macOS Calendar and Reminders.** The skill bundles a single, auditable Swift CLI over Apple's [EventKit](https://developer.apple.com/documentation/eventkit) — `git clone` it into your agent's skills directory and it just works. **No MCP, no servers, no arbitrary code execution.**
 
 > *"Remind me to send the report at 9am tomorrow."* · *"What meetings do I have this week?"* · *"Mark that one done."*
@@ -20,10 +22,10 @@ you  ▸ what meetings do I have this week?
 
 agent ▸ agendactl calendar list-events --from 2026-06-29T00:00:00 --to 2026-07-06T00:00:00
       ← {"_iso":"2026-06-29","items":[
-           {"summary":"Funda Sales & Engineer sync","calendar":"Work",
+           {"summary":"Design review","calendar":"Work",
             "start":"2026-07-02T01:00:00Z","end":"2026-07-02T01:30:00Z"} ]}
       This week you have one meeting:
-        • Thu 07-02, 09:00–09:30 — Funda Sales & Engineer sync (Work)
+        • Thu 07-02, 09:00–09:30 — Design review (Work)
 
 you  ▸ remind me to send the report at 9am tomorrow
 

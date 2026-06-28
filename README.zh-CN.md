@@ -4,6 +4,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-black?logo=apple)
 
+<p align="center"><img src="docs/assets/demo.svg" alt="agendactl:agent 调用 agendactl CLI 查日历、建提醒,并解析其 JSON 回答" width="760"></p>
+
 **一个装了即用的 agent skill,让任意 AI agent 读写 macOS 日历与提醒事项。** skill 内置一个单文件、可审计的 Swift CLI(底座是 Apple 官方 [EventKit](https://developer.apple.com/documentation/eventkit))——`git clone` 到 agent 的 skills 目录就能用。**不用 MCP、不起 server、无任意代码执行。**
 
 > *"明天 9 点提醒我交报告"* · *"这周有什么会"* · *"把那条标记完成"*
@@ -20,10 +22,10 @@
 
 agent ▸ agendactl calendar list-events --from 2026-06-29T00:00:00 --to 2026-07-06T00:00:00
       ← {"_iso":"2026-06-29","items":[
-           {"summary":"Funda Sales & Engineer sync","calendar":"工作",
+           {"summary":"Design review","calendar":"工作",
             "start":"2026-07-02T01:00:00Z","end":"2026-07-02T01:30:00Z"} ]}
       这周有一个会:
-        • 周四 07-02,09:00–09:30 — Funda Sales & Engineer sync(工作)
+        • 周四 07-02,09:00–09:30 — Design review(工作)
 
 你    ▸ 提醒我明天 9 点交报告
 
