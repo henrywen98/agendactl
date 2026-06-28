@@ -74,8 +74,12 @@ func parseFlags(_ a: [String]) -> (pos: [String], fl: [String:String], bo: Set<S
     while i < a.count {
         let t = a[i]
         if t.hasPrefix("--") {
-            if valueFlags.contains(t), i + 1 < a.count { fl[t] = a[i+1]; i += 2 }
-            else { bo.insert(t); i += 1 }
+            if valueFlags.contains(t) {
+                // consume the next token as the value only if it isn't itself a flag;
+                // otherwise leave this flag unset so required-field validation catches it
+                if i + 1 < a.count, !a[i+1].hasPrefix("--") { fl[t] = a[i+1]; i += 2 }
+                else { i += 1 }
+            } else { bo.insert(t); i += 1 }
         } else { pos.append(t); i += 1 }
     }
     return (pos, fl, bo)
@@ -84,17 +88,17 @@ func intFlag(_ fl: [String:String], _ k: String) -> Int? { fl[k].flatMap { Int($
 
 // ---------- authorization ----------
 func authEvents() {
-    let sema = DispatchSemaphore(value: 0); var ok = false
-    store.requestFullAccessToEvents { g, _ in ok = g; sema.signal() }
+    let sema = DispatchSemaphore(value: 0); var ok = false; var errMsg = ""
+    store.requestFullAccessToEvents { g, e in ok = g; if let e = e { errMsg = e.localizedDescription }; sema.signal() }
     sema.wait()
-    if !ok { fail(3, "Calendar not authorized (EventKit events)",
+    if !ok { fail(3, "Calendar not authorized (EventKit events)" + (errMsg.isEmpty ? "" : ": \(errMsg)"),
         hint: "System Settings → Privacy & Security → Calendars: grant the terminal Full Access, or re-run to trigger the prompt") }
 }
 func authReminders() {
-    let sema = DispatchSemaphore(value: 0); var ok = false
-    store.requestFullAccessToReminders { g, _ in ok = g; sema.signal() }
+    let sema = DispatchSemaphore(value: 0); var ok = false; var errMsg = ""
+    store.requestFullAccessToReminders { g, e in ok = g; if let e = e { errMsg = e.localizedDescription }; sema.signal() }
     sema.wait()
-    if !ok { fail(3, "Reminders not authorized (EventKit reminders)",
+    if !ok { fail(3, "Reminders not authorized (EventKit reminders)" + (errMsg.isEmpty ? "" : ": \(errMsg)"),
         hint: "System Settings → Privacy & Security → Reminders: grant the terminal Full Access") }
 }
 
@@ -200,17 +204,21 @@ func cmdReminderList(_ fl: [String:String]) {
     let status = fl["--status"] ?? "incomplete"
     let pred: NSPredicate
     switch status {
-    case "completed": pred = store.predicateForCompletedReminders(withCompletionDateStarting: nil, ending: nil, calendars: cals)
-    case "all":       pred = store.predicateForReminders(in: cals)
-    default:          pred = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: cals)
+    case "incomplete": pred = store.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: cals)
+    case "completed":  pred = store.predicateForCompletedReminders(withCompletionDateStarting: nil, ending: nil, calendars: cals)
+    case "all":        pred = store.predicateForReminders(in: cals)
+    default:           fail(1, "--status must be incomplete|completed|all: \(status)")
     }
     var rems = fetchReminders(pred)
     let cal = Calendar.current
-    if fl["--due"] == "today" {
-        let t0 = cal.startOfDay(for: Date()); let t1 = cal.date(byAdding: .day, value: 1, to: t0)!
-        rems = rems.filter { if let dc = $0.dueDateComponents, let d = cal.date(from: dc) { return d >= t0 && d < t1 }; return false }
-    } else if let due = fl["--due"], let dd = parseDate(due) {
-        rems = rems.filter { if let dc = $0.dueDateComponents, let d = cal.date(from: dc) { return d <= dd }; return false }
+    if let dueRaw = fl["--due"] {
+        if dueRaw == "today" {
+            let t0 = cal.startOfDay(for: Date()); let t1 = cal.date(byAdding: .day, value: 1, to: t0)!
+            rems = rems.filter { if let dc = $0.dueDateComponents, let d = cal.date(from: dc) { return d >= t0 && d < t1 }; return false }
+        } else {
+            guard let dd = parseDate(dueRaw) else { fail(1, "--due must be 'today' or ISO 8601: \(dueRaw)") }
+            rems = rems.filter { if let dc = $0.dueDateComponents, let d = cal.date(from: dc) { return d <= dd }; return false }
+        }
     }
     if let lim = intFlag(fl, "--limit") { rems = Array(rems.prefix(lim)) }
     emit(rems.map {
@@ -233,8 +241,8 @@ func cmdReminderCreate(_ fl: [String:String]) {
     let r = EKReminder(eventStore: store)
     r.calendar = cal; r.title = name
     if let n = fl["--notes"] ?? fl["--body"] { r.notes = n }
-    if let dueS = fl["--due"], let d = parseDate(dueS) { setDue(r, d) }
-    if let p = intFlag(fl, "--priority") { r.priority = p }
+    if let dueS = fl["--due"] { guard let d = parseDate(dueS) else { fail(1, "--due is not valid ISO: \(dueS)") }; setDue(r, d) }
+    if let p = intFlag(fl, "--priority") { guard (0...9).contains(p) else { fail(1, "--priority must be 0-9") }; r.priority = p }
     do { try store.save(r, commit: true) } catch { fail(4, "save failed: \(error.localizedDescription)") }
     emit(["id": r.calendarItemIdentifier, "name": r.title ?? "", "list": cal.title, "due": dueISO(r)] as [String: Any])
 }
@@ -244,8 +252,8 @@ func cmdReminderUpdate(_ pos: [String], _ fl: [String:String], _ bo: Set<String>
     let r = reminderByID(id)
     if let s = fl["--name"] { r.title = s }
     if let n = fl["--notes"] ?? fl["--body"] { r.notes = n }
-    if let dueS = fl["--due"], let d = parseDate(dueS) { setDue(r, d) }
-    if let p = intFlag(fl, "--priority") { r.priority = p }
+    if let dueS = fl["--due"] { guard let d = parseDate(dueS) else { fail(1, "--due is not valid ISO: \(dueS)") }; setDue(r, d) }
+    if let p = intFlag(fl, "--priority") { guard (0...9).contains(p) else { fail(1, "--priority must be 0-9") }; r.priority = p }
     if bo.contains("--complete") { r.isCompleted = true }
     do { try store.save(r, commit: true) } catch { fail(4, "save failed: \(error.localizedDescription)") }
     emit(["id": r.calendarItemIdentifier, "name": r.title ?? "", "completed": r.isCompleted, "due": dueISO(r)] as [String: Any])
@@ -295,7 +303,7 @@ agendactl calendar — calendar events (EventKit)
   calendars
       list all calendars: name + id + writable
   list-events [--calendar <name>] [--from <iso>] [--to <iso>] [--limit <n>]
-      list events (default: next 30 days), returns a JSON array
+      list events (default: next 30 days), returns {…meta, items:[...]}
   create-event --calendar <name> --summary <title> --start <iso> --end <iso>
                [--location <text>] [--notes <text>] [--all-day]
       create an event, returns one with id; --end must be later than --start
@@ -312,7 +320,7 @@ agendactl reminders — reminders / to-dos (EventKit)
   lists
       list all lists: name + id + writable
   list [--list <name>] [--status incomplete|completed|all] [--due today|<iso>] [--limit <n>]
-      list reminders (default: incomplete), returns a JSON array
+      list reminders (default: incomplete), returns {…meta, items:[...]}
   create --list <name> --name <text> [--notes <text>] [--due <iso>] [--priority 0-9]
       create a reminder, returns one with id; priority 0=none 1-4=high 5=medium 6-9=low
   update <id> [--name] [--notes] [--due] [--priority] [--complete]

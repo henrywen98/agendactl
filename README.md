@@ -76,7 +76,7 @@ agendactl reminders update <id> --due "2026-07-01T09:00:00"
 
 **Contract** (so agents parse reliably):
 
-- Success → exit `0`, stdout is **bare JSON** (no envelope). Failure → exit non-zero, stderr first line `agendactl: <reason>`.
+- Success → exit `0`, stdout is **JSON**. Every response carries `_at` / `_tz` / `_iso` / `_note` meta at the top level: list responses put the array under `items` (`{…meta, "items": [...]}`); write responses merge the meta keys onto the result fields. Failure → exit non-zero, stderr first line `agendactl: <reason>`.
 - Exit codes: `0` ok · `1` usage/arg error · `2` not found (incl. duplicate-name ambiguity) · `3` not authorized · `4` runtime error.
 - Dates: input ISO 8601 (no tz suffix = local time); output UTC ISO. Every response carries `_at` / `_tz` / `_iso` / `_note` meta — use `._iso` to resolve "today".
 - Containers (calendars/lists) are addressed by **name**; duplicates return exit `2` + candidates, disambiguate with `--index <n>`.

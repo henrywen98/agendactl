@@ -31,46 +31,65 @@ preclean_cal() {
     | while read -r id; do "$AGENDACTL" calendar delete-event "$id" >/dev/null 2>&1; done
 }
 
+# 中断也能清理:trap 删掉本次建的临时项(正常流程末尾会显式删并清空变量,这里兜中断)
+RID=""; EID=""
+cleanup() {
+  [ -n "$RID" ] && "$AGENDACTL" reminders delete "$RID" >/dev/null 2>&1
+  [ -n "$EID" ] && "$AGENDACTL" calendar delete-event "$EID" >/dev/null 2>&1
+  return 0
+}
+trap cleanup EXIT
+
 # ──────────── Reminders ────────────
 echo "── reminders ──"
-LIST=$("$AGENDACTL" reminders lists | jget "next(x['name'] for x in d['items'] if x['writable'])")
-echo "  可写清单: $LIST"
-preclean_rem "$LIST"
+LIST=$("$AGENDACTL" reminders lists | jget "next((x['name'] for x in d['items'] if x['writable']), '')")
+if [ -z "$LIST" ]; then
+  echo "  (无可写提醒清单 — 跳过 reminders)"
+else
+  echo "  可写清单: $LIST"
+  preclean_rem "$LIST"
 
-RID=$("$AGENDACTL" reminders create --list "$LIST" --name "$TAG" --due "2026-12-31T09:00:00" --priority 5 | jget "d['id']")
-[ -n "$RID" ] && ok "create 返回 id" || bad "create 无 id"
+  RID=$("$AGENDACTL" reminders create --list "$LIST" --name "$TAG" --due "2026-12-31T09:00:00" --priority 5 | jget "d['id']")
+  [ -n "$RID" ] && ok "create 返回 id" || bad "create 无 id"
 
-NAME=$("$AGENDACTL" reminders update "$RID" --name "$TAG edited" --priority 1 | jget "d['name']")
-[ "$NAME" = "$TAG edited" ] && ok "update name 生效" || bad "update name=$NAME"
+  NAME=$("$AGENDACTL" reminders update "$RID" --name "$TAG edited" --priority 1 | jget "d['name']")
+  [ "$NAME" = "$TAG edited" ] && ok "update name 生效" || bad "update name=$NAME"
 
-COMP=$("$AGENDACTL" reminders complete "$RID" | jget "d['completed']")
-[ "$COMP" = "True" ] && ok "complete 生效" || bad "complete=$COMP"
+  COMP=$("$AGENDACTL" reminders complete "$RID" | jget "d['completed']")
+  [ "$COMP" = "True" ] && ok "complete 生效" || bad "complete=$COMP"
 
-"$AGENDACTL" reminders delete "$RID" >/dev/null
-GONE=$("$AGENDACTL" reminders list --list "$LIST" --status all | jget "'FOUND' if any(r['id']=='$RID' for r in d['items']) else 'GONE'")
-[ "$GONE" = "GONE" ] && ok "delete 后归零" || bad "delete 后仍在"
+  "$AGENDACTL" reminders delete "$RID" >/dev/null
+  GONE=$("$AGENDACTL" reminders list --list "$LIST" --status all | jget "'FOUND' if any(r['id']=='$RID' for r in d['items']) else 'GONE'")
+  [ "$GONE" = "GONE" ] && ok "delete 后归零" || bad "delete 后仍在"
+  RID=""
+fi
 
 # ──────────── Calendar ────────────
 echo "── calendar ──"
-CAL=$("$AGENDACTL" calendar calendars | jget "next(x['name'] for x in d['items'] if x['writable'])")
-echo "  可写日历: $CAL"
-preclean_cal "$CAL"
-
-EID=$("$AGENDACTL" calendar create-event --calendar "$CAL" --summary "$TAG" --start "2026-12-31T10:00:00" --end "2026-12-31T11:00:00" | jget "d['id']")
-[ -n "$EID" ] && ok "create-event 返回 id" || bad "create-event 无 id"
-
-SUMM=$("$AGENDACTL" calendar update-event "$EID" --summary "$TAG edited" --start "2026-12-31T14:00:00" --end "2026-12-31T15:00:00" | jget "d['summary']")
-[ "$SUMM" = "$TAG edited" ] && ok "update-event 生效" || bad "update-event summary=$SUMM"
-
-if "$AGENDACTL" calendar update-event "$EID" --start "2026-12-31T16:00:00" --end "2026-12-31T15:00:00" >/dev/null 2>&1; then
-  bad "end<=start 未被拒"
+CAL=$("$AGENDACTL" calendar calendars | jget "next((x['name'] for x in d['items'] if x['writable']), '')")
+if [ -z "$CAL" ]; then
+  echo "  (无可写日历 — 跳过 calendar)"
 else
-  ok "end<=start 被拒（exit 非0）"
-fi
+  echo "  可写日历: $CAL"
+  preclean_cal "$CAL"
 
-"$AGENDACTL" calendar delete-event "$EID" >/dev/null
-GONE=$("$AGENDACTL" calendar list-events --calendar "$CAL" --from "2026-12-30T00:00:00" --to "2027-01-02T00:00:00" | jget "'FOUND' if any(e['id']=='$EID' for e in d['items']) else 'GONE'")
-[ "$GONE" = "GONE" ] && ok "delete-event 后归零" || bad "delete-event 后仍在"
+  EID=$("$AGENDACTL" calendar create-event --calendar "$CAL" --summary "$TAG" --start "2026-12-31T10:00:00" --end "2026-12-31T11:00:00" | jget "d['id']")
+  [ -n "$EID" ] && ok "create-event 返回 id" || bad "create-event 无 id"
+
+  SUMM=$("$AGENDACTL" calendar update-event "$EID" --summary "$TAG edited" --start "2026-12-31T14:00:00" --end "2026-12-31T15:00:00" | jget "d['summary']")
+  [ "$SUMM" = "$TAG edited" ] && ok "update-event 生效" || bad "update-event summary=$SUMM"
+
+  if "$AGENDACTL" calendar update-event "$EID" --start "2026-12-31T16:00:00" --end "2026-12-31T15:00:00" >/dev/null 2>&1; then
+    bad "end<=start 未被拒"
+  else
+    ok "end<=start 被拒（exit 非0）"
+  fi
+
+  "$AGENDACTL" calendar delete-event "$EID" >/dev/null
+  GONE=$("$AGENDACTL" calendar list-events --calendar "$CAL" --from "2026-12-30T00:00:00" --to "2027-01-02T00:00:00" | jget "'FOUND' if any(e['id']=='$EID' for e in d['items']) else 'GONE'")
+  [ "$GONE" = "GONE" ] && ok "delete-event 后归零" || bad "delete-event 后仍在"
+  EID=""
+fi
 
 echo ""
 echo "结果: $pass 通过, $fail 失败"

@@ -5,7 +5,7 @@
 # macOS
 .DS_Store
 
-# build intermediates (the final universal binary `skills/ekctl/scripts/ekctl` IS committed)
+# build intermediates (the final universal binary `skills/agendactl/scripts/agendactl` IS committed)
 skills/agendactl/scripts/.agendactl-arm64
 skills/agendactl/scripts/.agendactl-x64
 *.o

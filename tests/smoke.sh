@@ -21,26 +21,27 @@ run() { OUT=$("$AGENDACTL" "$@" 2>"$ERRF"); CODE=$?; ERR=$(cat "$ERRF"); }
 [ -x "$AGENDACTL" ] || { echo "agendactl not executable: $AGENDACTL"; exit 2; }
 echo "agendactl smoke test @ $AGENDACTL"
 
+# Match on captured output via `case` (no pipe → immune to pipefail + grep -q SIGPIPE).
 # ── help: exit 0, no auth ──
 run --help
-{ [ "$CODE" -eq 0 ] && printf '%s' "$OUT" | grep -q "agendactl"; } \
+{ [ "$CODE" -eq 0 ] && case "$OUT" in *agendactl*) true;; *) false;; esac; } \
   && ok "agendactl --help → exit 0" || bad "agendactl --help (code=$CODE)"
 
 run calendar --help
-{ [ "$CODE" -eq 0 ] && printf '%s' "$OUT" | grep -qi "calendar"; } \
+{ [ "$CODE" -eq 0 ] && case "$OUT" in *[Cc]alendar*) true;; *) false;; esac; } \
   && ok "calendar --help → exit 0" || bad "calendar --help (code=$CODE)"
 
 run reminders --help
-{ [ "$CODE" -eq 0 ] && printf '%s' "$OUT" | grep -qi "reminders"; } \
+{ [ "$CODE" -eq 0 ] && case "$OUT" in *[Rr]eminders*) true;; *) false;; esac; } \
   && ok "reminders --help → exit 0" || bad "reminders --help (code=$CODE)"
 
 # ── error contract: exit 1 + `agendactl:` stderr, no auth ──
-run bogusapp
-{ [ "$CODE" -eq 1 ] && printf '%s' "$ERR" | grep -q "^agendactl:"; } \
-  && ok "unknown app → exit 1 + agendactl: stderr" || bad "unknown app (code=$CODE err=$ERR)"
+run bogusapp                       # unknown app → no subcommand path
+{ [ "$CODE" -eq 1 ] && case "$ERR" in agendactl:*) true;; *) false;; esac; } \
+  && ok "no subcommand → exit 1 + agendactl: stderr" || bad "no subcommand (code=$CODE err=$ERR)"
 
-run calendar frobnicate
-{ [ "$CODE" -eq 1 ] && printf '%s' "$ERR" | grep -q "^agendactl:"; } \
+run calendar frobnicate            # unknown command under a known app
+{ [ "$CODE" -eq 1 ] && case "$ERR" in agendactl:*) true;; *) false;; esac; } \
   && ok "unknown command → exit 1 + agendactl: stderr" || bad "unknown command (code=$CODE err=$ERR)"
 
 # ── bundled binary is a signed universal2 Mach-O ──

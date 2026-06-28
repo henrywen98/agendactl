@@ -24,11 +24,18 @@ around it by writing scripts.
 
 ## Running agendactl
 
-The command is `agendactl`. If the shell reports `command not found` (not on `PATH`), the binary is
-**bundled next to this skill at `scripts/agendactl`** — call it by that path; subcommands and flags are
-identical. Do not `find` the whole disk for it, and do not substitute another tool (Google Calendar,
-a separate task app): this machine's Calendar/Reminders data lives only in macOS, and only `agendactl`
-reads it.
+The binary ships **inside this skill** at `scripts/agendactl`. Resolve it in this order:
+
+1. If `agendactl` is on `PATH`, just call `agendactl`.
+2. Otherwise, run the bundled binary using **this skill's own directory** — the absolute path of the
+   folder this `SKILL.md` was loaded from — e.g. `~/.claude/skills/agendactl/scripts/agendactl` or
+   `~/.pi/agent/skills/agendactl/scripts/agendactl`. **Resolve `scripts/agendactl` against the skill
+   directory, NOT against the current working directory** (the cwd is usually the user's project, not
+   this skill). No install step beyond having the skill folder is required.
+
+Subcommands and flags are identical either way. Do not `find` the whole disk for it, and do not
+substitute another tool (Google Calendar, a separate task app): this machine's Calendar/Reminders
+data lives only in macOS, and only `agendactl` reads it.
 
 ## Design notes (read first)
 
@@ -75,7 +82,7 @@ reads it.
 | command | purpose |
 |---|---|
 | `agendactl calendar calendars` | list all calendars: name + id + writable. **Run before any write.** |
-| `agendactl calendar list-events [--calendar <name>] [--from <iso>] [--to <iso>] [--limit <n>]` | list events (default next 30 days), returns a JSON array |
+| `agendactl calendar list-events [--calendar <name>] [--from <iso>] [--to <iso>] [--limit <n>]` | list events (default next 30 days), returns `{…meta, items:[...]}` |
 | `agendactl calendar create-event --calendar <name> --summary <title> --start <iso> --end <iso> [--location <text>] [--notes <text>] [--all-day]` | create an event, returns one with id |
 | `agendactl calendar update-event <id> [--summary] [--start] [--end] [--location] [--notes]` | update (fields not given stay unchanged) |
 | `agendactl calendar delete-event <id>` | delete an event |
@@ -88,7 +95,7 @@ exit 1); when changing only one end, keep the order valid.
 | command | purpose |
 |---|---|
 | `agendactl reminders lists` | list all lists: name + id + writable. **Run before any write.** |
-| `agendactl reminders list [--list <name>] [--status incomplete\|completed\|all] [--due today\|<iso>] [--limit <n>]` | list reminders (default incomplete), returns a JSON array |
+| `agendactl reminders list [--list <name>] [--status incomplete\|completed\|all] [--due today\|<iso>] [--limit <n>]` | list reminders (default incomplete), returns `{…meta, items:[...]}` |
 | `agendactl reminders create --list <name> --name <text> [--notes <text>] [--due <iso>] [--priority 0-9]` | create a reminder, returns one with id |
 | `agendactl reminders update <id> [--name] [--notes] [--due] [--priority] [--complete]` | update (fields not given stay unchanged) |
 | `agendactl reminders complete <id>` | mark complete |
