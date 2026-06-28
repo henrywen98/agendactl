@@ -1,87 +1,82 @@
-# ekctl
+# agendactl
 
-**Control macOS Calendar & Reminders from any AI agent** — a single, auditable Swift CLI over Apple's [EventKit](https://developer.apple.com/documentation/eventkit), shipped as an agent skill. **No MCP required. No arbitrary code execution.**
+**An installable agent skill that lets any AI agent read & write macOS Calendar and Reminders.** The skill bundles a single, auditable Swift CLI over Apple's [EventKit](https://developer.apple.com/documentation/eventkit) — `git clone` it into your agent's skills directory and it just works. **No MCP, no servers, no arbitrary code execution.**
 
 > *"Remind me to send the report at 9am tomorrow."* · *"What meetings do I have this week?"* · *"Mark that one done."*
-> The agent only ever calls `ekctl <app> <cmd> --flag …` and passes arguments — it never writes code, never touches EventKit, never gets an escape hatch.
+> The agent only ever calls `agendactl <app> <cmd> --flag …` and passes arguments — it never writes code, never touches EventKit, never gets an escape hatch.
 
 [English] · [中文](./README.zh-CN.md)
 
 ---
 
-## Why another macOS Calendar/Reminders tool?
+## What it is
 
-There are many MCP servers for Apple Reminders/Calendar. `ekctl` takes the opposite bet: a **thin, parameterized CLI** that any agent drives with arguments, plus an *optional* MCP adapter for GUI clients that can't run a shell.
+A [Claude/agent **Skill**](https://github.com/VoltAgent/awesome-agent-skills): a folder with a `SKILL.md` (so the agent knows when and how to use it) plus a **prebuilt, signed universal binary** in `scripts/`. Install the folder, and any skill-aware agent — Claude Code, Codex, Cursor, Gemini CLI, pi — can manage your Calendar and Reminders. The same binary is a normal CLI you can run yourself or from cron/scripts.
 
-| | `ekctl` | typical Apple-app MCP server |
+## Why a skill instead of an MCP server?
+
+There are many MCP servers (and a few CLIs) for Apple Calendar/Reminders. `agendactl` takes a different shape:
+
+| | `agendactl` (skill + CLI) | typical Apple-app MCP server |
 |---|---|---|
-| Agent interface | calls a CLI with flags | calls MCP tools |
-| Works without an MCP client | ✅ any agent that can run `bash` (Claude Code, Cursor, pi, scripts, cron) | ❌ needs an MCP host |
-| Works *with* Claude Desktop / Codex | ✅ via optional `mcp/` adapter | ✅ |
-| Arbitrary code execution given to the agent | ❌ none — args only, capability capped at CLI surface | varies |
-| Auditable surface | one Swift file (~350 lines) you can read end-to-end | server + deps |
-| Runtime to install | a single signed binary (no Node/Python) | Node / Python / bun |
+| Install | `git clone` a folder into your skills dir | configure an MCP server + its runtime |
+| Runtime to install | **none** — a bundled signed universal binary | Node / Python / bun |
+| Works with shell agents (Claude Code, Cursor, pi, cron, scripts) | ✅ directly | ❌ needs an MCP host |
+| Arbitrary code execution handed to the agent | ❌ none — arguments only, capability capped at the CLI surface | varies |
+| Auditable surface | one Swift file (~350 lines) you can read end-to-end | server + dependencies |
 | Backend | native EventKit (stable ids, millisecond queries) | EventKit / AppleScript / JXA |
+
+> Scope is deliberate: shell-capable agents only. A GUI-only client that can't run a shell (e.g. Claude Desktop) is out of scope by design — that's the MCP servers' niche, and this isn't trying to be one.
 
 The design wasn't arrived at lightly — it's the result of reversing an earlier "JXA + escape-hatch" architecture under scrutiny. Every reversal, with measurements, is in [`docs/adr/`](./docs/adr/).
 
 ## Install
 
-**Requirements:** macOS 14+ (Sonoma or later), Apple Silicon or Intel. A prebuilt universal binary is committed at `skills/ekctl/scripts/ekctl`.
+**Requirements:** macOS 14+ (Sonoma or later), Apple Silicon or Intel. A prebuilt universal binary is committed at `skills/agendactl/scripts/agendactl`.
 
+**As an agent skill** (recommended) — copy the self-contained skill into your agent's skills directory:
 ```bash
-git clone https://github.com/henrywen98/ekctl.git
-cd ekctl
+git clone https://github.com/henrywen98/agendactl.git
+cp -R agendactl/skills/agendactl ~/.claude/skills/agendactl     # Claude Code; or .pi/skills, ~/.codex/skills, etc.
 ```
+The skill bundles the binary, so installing the skill is all that's needed. (`git clone` does not quarantine files, so the binary runs as-is. If you downloaded a ZIP from a browser, clear quarantine once: `xattr -dr com.apple.quarantine ~/.claude/skills/agendactl/scripts/agendactl`.)
 
-`git clone` does **not** quarantine files, so the binary runs as-is. (If you downloaded a ZIP from a browser, clear quarantine once: `xattr -dr com.apple.quarantine skills/ekctl/scripts/ekctl`.)
-
-Pick how you want to use it:
-
-**As a CLI** (Claude Code, Cursor, pi, your own scripts) — put it on your `PATH`:
+**As a plain CLI** (for your own scripts / cron) — put it on your `PATH`:
 ```bash
-ln -s "$(pwd)/skills/ekctl/scripts/ekctl" /opt/homebrew/bin/ekctl
-ekctl --help
+ln -s "$(pwd)/agendactl/skills/agendactl/scripts/agendactl" /opt/homebrew/bin/agendactl
+agendactl --help
 ```
-
-**As an agent skill** — copy the self-contained skill into your agent's skills directory:
-```bash
-cp -R skills/ekctl ~/.claude/skills/ekctl      # Claude Code; or .pi/skills, etc.
-```
-The skill bundles the binary, so installing the skill is all that's needed.
-
-**As an MCP server** (Claude Desktop, Codex desktop) — see [`mcp/`](./mcp/).
 
 **Rebuild from source** (optional, for audit or a fresh build):
 ```bash
-./skills/ekctl/scripts/build.sh        # 2× swiftc → lipo → codesign (universal2, ad-hoc)
+./skills/agendactl/scripts/build.sh        # 2× swiftc → lipo → codesign (universal2, ad-hoc)
 ```
 
 ## Permissions (one-time)
 
-EventKit is gated by macOS privacy (TCC). On first use, ekctl triggers the system prompt for **Calendar** and **Reminders** — approve it once in a logged-in GUI session (Calendar and Reminders are separate buckets). If not yet authorized, ekctl exits with code `3` and a hint. This step is inherent to any tool touching these apps and can't be skipped headlessly.
+EventKit is gated by macOS privacy (TCC). On first use, agendactl triggers the system prompt for **Calendar** and **Reminders** — approve it once in a logged-in GUI session (Calendar and Reminders are separate buckets). If not yet authorized, agendactl exits with code `3` and a hint. This step is inherent to any tool touching these apps and can't be skipped headlessly.
 
 ## Usage
 
 ```bash
-ekctl --help                 # overview
-ekctl reminders --help       # reminders commands
-ekctl calendar --help        # calendar commands
+agendactl --help                 # overview
+agendactl reminders --help       # reminders commands
+agendactl calendar --help        # calendar commands
 
 # "Remind me to send the report at 9am tomorrow"
-ekctl reminders create --list "Tasks" --name "Send report" --due "2026-06-29T09:00:00"
+agendactl reminders create --list "Tasks" --name "Send report" --due "2026-06-29T09:00:00"
 # → {"id":"…","name":"Send report","list":"Tasks","due":"2026-06-29T01:00:00.000Z", …}
 
 # "What meetings do I have this week?"
-ekctl calendar list-events --from "2026-06-29T00:00:00" --to "2026-07-06T00:00:00"
+agendactl calendar list-events --from "2026-06-29T00:00:00" --to "2026-07-06T00:00:00"
 
 # "Move that reminder to the day after"
-ekctl reminders update <id> --due "2026-07-01T09:00:00"
+agendactl reminders update <id> --due "2026-07-01T09:00:00"
 ```
 
 **Contract** (so agents parse reliably):
 
-- Success → exit `0`, stdout is **bare JSON** (no envelope). Failure → exit non-zero, stderr first line `ekctl: <reason>`.
+- Success → exit `0`, stdout is **bare JSON** (no envelope). Failure → exit non-zero, stderr first line `agendactl: <reason>`.
 - Exit codes: `0` ok · `1` usage/arg error · `2` not found (incl. duplicate-name ambiguity) · `3` not authorized · `4` runtime error.
 - Dates: input ISO 8601 (no tz suffix = local time); output UTC ISO. Every response carries `_at` / `_tz` / `_iso` / `_note` meta — use `._iso` to resolve "today".
 - Containers (calendars/lists) are addressed by **name**; duplicates return exit `2` + candidates, disambiguate with `--index <n>`.
@@ -89,7 +84,7 @@ ekctl reminders update <id> --due "2026-07-01T09:00:00"
 ## Commands
 
 ```
-ekctl calendar
+agendactl calendar
   calendars
   list-events  [--calendar <name>] [--from <iso>] [--to <iso>] [--limit <n>]
   create-event --calendar <name> --summary <text> --start <iso> --end <iso>
@@ -97,7 +92,7 @@ ekctl calendar
   update-event <id> [--summary] [--start] [--end] [--location] [--notes]
   delete-event <id>
 
-ekctl reminders
+agendactl reminders
   lists
   list     [--list <name>] [--status incomplete|completed|all] [--due today|<iso>] [--limit <n>]
   create   --list <name> --name <text> [--notes <text>] [--due <iso>] [--priority 0-9]
@@ -109,11 +104,16 @@ ekctl reminders
 ## How it works
 
 ```
-AI agent  ──(bash: ekctl <app> <cmd> --flag …, args only)──▶  ekctl (Swift, EventKit)  ──▶  macOS Calendar / Reminders
-GUI agent ──(MCP tools)──▶  mcp/ adapter  ──▶  ekctl  ──▶  …
+skill-aware agent (Claude Code / Codex / Cursor / Gemini CLI / pi)
+  └─ reads skills/agendactl/SKILL.md, calls:  agendactl <app> <cmd> --flag …  (args only)
+        │ runs the bundled binary
+        ▼
+  agendactl (Swift, EventKit) — arg validation, auth, time zones, stable ids, end>start
+        ▼
+  macOS Calendar / Reminders (EKEvent / EKReminder) ← iCloud sync
 ```
 
-The CLI is the single source of truth: argument validation, authorization, time zones, stable ids, and business rules (e.g. `end > start`) all live inside it. The optional MCP adapter is a thin forwarder — it adds no business logic.
+The CLI is the single source of truth: validation, authorization, time zones, stable ids, and business rules all live inside one Swift file.
 
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** — design contract (read this first)
 - **[docs/adr/](./docs/adr/)** — decision records (ADR-0001..0012, the v1→v2 evolution)
@@ -121,14 +121,14 @@ The CLI is the single source of truth: argument validation, authorization, time 
 
 ## Status
 
-- ✅ CLI runtime (`skills/ekctl/scripts/ekctl`, EventKit, Calendar + Reminders CRUD)
-- ✅ Agent skill (`skills/ekctl/SKILL.md`)
-- ✅ Black-box round-trip tests (`tests/roundtrip.sh`, `__probe__`-tagged, idempotent, self-cleaning)
-- 🔜 MCP adapter (`mcp/`) · Notes (needs a JXA backend) · Mail / Contacts · scheduled automation
+- ✅ CLI runtime (`skills/agendactl/scripts/agendactl`, EventKit, Calendar + Reminders CRUD)
+- ✅ Agent skill (`skills/agendactl/SKILL.md`)
+- ✅ Tests: smoke (no-auth contract) and round-trip (EventKit CRUD, `__probe__`-tagged, idempotent, self-cleaning)
+- 🔜 Notes (needs a JXA backend) · Mail / Contacts · scheduled automation
 
-Tests write `__probe__`-tagged temporary items into the first writable list/calendar and delete them again:
 ```bash
-./tests/roundtrip.sh
+./tests/smoke.sh        # contract checks, no authorization / no data written
+./tests/roundtrip.sh    # full EventKit CRUD round-trip (needs TCC auth; writes & cleans __probe__ items)
 ```
 
 ## License

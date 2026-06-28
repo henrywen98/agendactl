@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Reproducible build for ekctl.
-# Source of truth: ekctl.swift  →  Output: ekctl (universal2, ad-hoc signed).
+# Reproducible build for agendactl.
+# Source of truth: agendactl.swift  →  Output: agendactl (universal2, ad-hoc signed).
 #
 # Why precompiled + signed (not `#!/usr/bin/swift`):
 #   - no Xcode toolchain needed on the user's machine
@@ -12,14 +12,14 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-SRC=ekctl.swift
-OUT=ekctl
+SRC=agendactl.swift
+OUT=agendactl
 MIN=14   # macOS deployment target — EventKit requestFullAccessTo* needs macOS 14+
 
-echo "→ arm64"   ; swiftc -O -target arm64-apple-macos$MIN  "$SRC" -o .ekctl-arm64
-echo "→ x86_64"  ; swiftc -O -target x86_64-apple-macos$MIN "$SRC" -o .ekctl-x64
-echo "→ lipo"    ; lipo -create .ekctl-arm64 .ekctl-x64 -output "$OUT"
-rm -f .ekctl-arm64 .ekctl-x64
+echo "→ arm64"   ; swiftc -O -target arm64-apple-macos$MIN  "$SRC" -o .agendactl-arm64
+echo "→ x86_64"  ; swiftc -O -target x86_64-apple-macos$MIN "$SRC" -o .agendactl-x64
+echo "→ lipo"    ; lipo -create .agendactl-arm64 .agendactl-x64 -output "$OUT"
+rm -f .agendactl-arm64 .agendactl-x64
 # lipo strips signatures — re-sign the fat binary (ad-hoc; no Developer ID needed)
 echo "→ codesign"; codesign -s - --force "$OUT"
 

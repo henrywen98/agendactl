@@ -14,8 +14,8 @@
 
 ## 架构层（本轮审讯大幅反转，见 ADR-0001..0004）
 
-- **单一入口（Single Entry）** — `skills/ekctl/scripts/ekctl` 一个 Swift 可执行（[ADR-0009]/[ADR-0010]）。子命令 = `calendar` / `reminders` 各自的薄 CRUD + 容器列举（`calendars` / `lists`）。`menu` / `probe` / `run` 均无（[ADR-0004]；纯 EventKit 下也无 JXA run，[ADR-0008]）。
-- **薄壳（Thin Shell）** — `ekctl <app> <cmd>`，几个**已验证的参数化稳函数**，**不做查询引擎**。agent 只传参，底层是 EventKit（[ADR-0001]/[ADR-0007]）。取代 v1.0 的「厚抽象层」。
+- **单一入口（Single Entry）** — `skills/agendactl/scripts/agendactl` 一个 Swift 可执行（[ADR-0009]/[ADR-0010]）。子命令 = `calendar` / `reminders` 各自的薄 CRUD + 容器列举（`calendars` / `lists`）。`menu` / `probe` / `run` 均无（[ADR-0004]；纯 EventKit 下也无 JXA run，[ADR-0008]）。
+- **薄壳（Thin Shell）** — `agendactl <app> <cmd>`，几个**已验证的参数化稳函数**，**不做查询引擎**。agent 只传参，底层是 EventKit（[ADR-0001]/[ADR-0007]）。取代 v1.0 的「厚抽象层」。
 - **CLI-only 契约** — agent **永远只调 CLI、不碰 EventKit/JXA**。CLI 没覆盖的 → 告诉用户「做不了」或记为「待 Henry 加命令」。能力封顶 = CLI 覆盖面（[ADR-0002]）。
 - ~~**break-glass / `apple run`**~~ — ❌ 纯 EventKit（[ADR-0008]）下无 JXA run 子命令，break-glass 概念一并消失。
 - ~~**逃生舱（Escape Hatch）**~~ — ❌ 作废（[ADR-0002]）。v1.0 概念：接口 3 次不够时 agent 现场写 JXA。

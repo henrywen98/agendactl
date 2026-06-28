@@ -1,10 +1,10 @@
 #!/usr/bin/swift
 //
-// ekctl — a thin CLI-only shell over Apple's EventKit (Calendar + Reminders).
+// agendactl — a thin CLI-only shell over Apple's EventKit (Calendar + Reminders).
 // Contract: see docs/adr/ADR-0001..0012. Agents only call this CLI; they never
 // touch JXA / EventKit internals.
 // Exit codes: 0 ok / 1 usage error / 2 not found / 3 not authorized / 4 runtime error.
-// Success: stdout = bare JSON. Failure: stderr = "ekctl: <msg>".
+// Success: stdout = bare JSON. Failure: stderr = "agendactl: <msg>".
 // Date input: ISO 8601 (no suffix = local tz). Date output: UTC ISO.
 //
 import EventKit
@@ -42,7 +42,7 @@ func emit(_ obj: Any) {
     FileHandle.standardOutput.write("\n".data(using: .utf8)!)
 }
 func fail(_ code: Int32, _ msg: String, hint: String? = nil, available: [String]? = nil) -> Never {
-    var s = "ekctl: \(msg)\n"
+    var s = "agendactl: \(msg)\n"
     if let h = hint { s += "hint: \(h)\n" }
     if let a = available { s += "available: \(a.joined(separator: ", "))\n" }
     FileHandle.standardError.write(s.data(using: .utf8)!)
@@ -267,11 +267,11 @@ func cmdReminderDelete(_ pos: [String]) {
 
 // ================= help =================
 let HELP_TOP = """
-ekctl — read & write macOS Calendar and Reminders (EventKit)
+agendactl — read & write macOS Calendar and Reminders (EventKit)
 
 Usage:
-  ekctl <app> <cmd> [flags]
-  ekctl <app> --help
+  agendactl <app> <cmd> [flags]
+  agendactl <app> --help
 
 Apps:
   calendar    calendar events (list / create / update / delete)
@@ -283,14 +283,14 @@ Responses:
   When building relative dates ("today at 3pm"), read the date from ._iso.
 
 Conventions:
-  Success → exit 0, stdout is bare JSON. Failure → stderr first line `ekctl: <reason>`.
+  Success → exit 0, stdout is bare JSON. Failure → stderr first line `agendactl: <reason>`.
   Exit codes: 0 ok / 1 usage error / 2 not found / 3 not authorized / 4 runtime error
   Dates: input ISO 8601 (no tz suffix = local tz), output UTC ISO
 
-Per-app command detail: ekctl calendar --help / ekctl reminders --help
+Per-app command detail: agendactl calendar --help / agendactl reminders --help
 """
 let HELP_CALENDAR = """
-ekctl calendar — calendar events (EventKit)
+agendactl calendar — calendar events (EventKit)
 
   calendars
       list all calendars: name + id + writable
@@ -307,7 +307,7 @@ ekctl calendar — calendar events (EventKit)
 Duplicate calendar names → exit 2 + candidate list; disambiguate with --index <n>.
 """
 let HELP_REMINDERS = """
-ekctl reminders — reminders / to-dos (EventKit)
+agendactl reminders — reminders / to-dos (EventKit)
 
   lists
       list all lists: name + id + writable
@@ -330,11 +330,11 @@ let wantsHelp = argv.contains("--help") || argv.contains("-h")
 guard let app = argv.first, !["--help", "-h"].contains(app) else { printHelp(HELP_TOP) }
 let rest = Array(argv.dropFirst())
 
-// ekctl <app> --help  or  ekctl <app> (no subcommand) → that app's help
+// agendactl <app> --help  or  agendactl <app> (no subcommand) → that app's help
 if app == "calendar",  rest.first == nil || wantsHelp { printHelp(HELP_CALENDAR) }
 if app == "reminders", rest.first == nil || wantsHelp { printHelp(HELP_REMINDERS) }
 
-guard let cmd = rest.first else { fail(1, "missing subcommand; see `ekctl \(app) --help`") }
+guard let cmd = rest.first else { fail(1, "missing subcommand; see `agendactl \(app) --help`") }
 let (pos, fl, bo) = parseFlags(Array(rest.dropFirst()))
 
 switch (app, cmd) {
@@ -349,5 +349,5 @@ case ("reminders", "create"):      cmdReminderCreate(fl)
 case ("reminders", "update"):      cmdReminderUpdate(pos, fl, bo)
 case ("reminders", "complete"):    cmdReminderComplete(pos)
 case ("reminders", "delete"):      cmdReminderDelete(pos)
-default: fail(1, "unknown command: \(app) \(cmd); see `ekctl --help`")
+default: fail(1, "unknown command: \(app) \(cmd); see `agendactl --help`")
 }

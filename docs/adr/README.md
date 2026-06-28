@@ -29,12 +29,12 @@
 | [0008](ADR-0008.md) | 范围收缩至 Calendar+Reminders（去掉 Notes）→ 底座统一为纯 EventKit | accepted（简化 0007） |
 | [0009](ADR-0009.md) | CLI 形态 = Swift 单文件脚本（纯 EventKit） | accepted |
 | [0010](ADR-0010.md) | 二进制命名 `macctl`；calendar / reminders 拆成两个独立 skill | superseded by ADR-0012 |
-| [0011](ADR-0011.md) | 对外发布新增可选 MCP 适配层（反转 0008 对外部分） | accepted |
-| [0012](ADR-0012.md) | 形态=单 `ekctl` skill 内置预编译二进制；改名 macctl→ekctl（反转 0010） | accepted（修订 0010） |
+| [0011](ADR-0011.md) | 对外发布不做 MCP server（重申 0008，竞品/渠道理由） | accepted |
+| [0012](ADR-0012.md) | 形态=单 `agendactl` skill 内置预编译二进制；改名 macctl→agendactl（反转 0010） | accepted（修订 0010） |
 
 > 本轮审讯把 v1.0 的「接口优先 + 逃生舱」**反转**为「CLI-only 薄壳」：面向 agent 的厚机制（`--filter` DSL、`menu`、3 次降级、独立 probe、逃生舱）全部删除，复杂度移进由 Henry 维护、可黑盒测的 CLI 内部。
 > 底座经实测**再反转两次**：① Calendar/Reminders 从 AppleScript 脚本字典（JXA）改为 **EventKit** 官方框架（快 10–40×、id 稳、无 §9 坑，[ADR-0007]）；② 去掉 Notes 后范围正好 = EventKit 覆盖面，底座坍缩为**纯 EventKit、JXA 彻底退出**（[ADR-0008]）。
-> **净结果（已实现并实测全绿）**：scope = Calendar + Reminders；二进制 = `skills/ekctl/scripts/ekctl`（Swift 单文件，预编译 universal2 内置进 skill，[ADR-0009]/[ADR-0012]）；agent = CLI-only 调 `ekctl`，不能跑 shell 的 GUI agent 经可选 `mcp/` 适配层（[ADR-0011]）；底座 = 纯 EventKit；skill = 单个 `ekctl` skill 覆盖 calendar + reminders（[ADR-0012] 反转 0010 的拆分）。
+> **净结果（已实现并实测全绿）**：scope = Calendar + Reminders；二进制 = `skills/agendactl/scripts/agendactl`（Swift 单文件，预编译 universal2 内置进 skill，[ADR-0009]/[ADR-0012]）；agent = CLI-only 调 `agendactl`（只服务能跑 shell 的 agent；不做 MCP，[ADR-0011]）；底座 = 纯 EventKit；skill = 单个 `agendactl` skill 覆盖 calendar + reminders（[ADR-0012] 反转 0010 的拆分）。
 
 <!-- 
 审讯议题池（审完的转成 ADR 并从池里移除）：
