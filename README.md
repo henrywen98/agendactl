@@ -1,5 +1,9 @@
 # agendactl
 
+[![CI](https://github.com/henrywen98/agendactl/actions/workflows/ci.yml/badge.svg)](https://github.com/henrywen98/agendactl/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+![macOS 14+](https://img.shields.io/badge/macOS-14%2B-black?logo=apple)
+
 **An installable agent skill that lets any AI agent read & write macOS Calendar and Reminders.** The skill bundles a single, auditable Swift CLI over Apple's [EventKit](https://developer.apple.com/documentation/eventkit) — `git clone` it into your agent's skills directory and it just works. **No MCP, no servers, no arbitrary code execution.**
 
 > *"Remind me to send the report at 9am tomorrow."* · *"What meetings do I have this week?"* · *"Mark that one done."*
@@ -37,9 +41,11 @@ The design wasn't arrived at lightly — it's the result of reversing an earlier
 **As an agent skill** (recommended) — copy the self-contained skill into your agent's skills directory:
 ```bash
 git clone https://github.com/henrywen98/agendactl.git
-cp -R agendactl/skills/agendactl ~/.claude/skills/agendactl     # Claude Code; or .pi/skills, ~/.codex/skills, etc.
+cp -R agendactl/skills/agendactl ~/.agents/skills/agendactl    # shared agent-skills dir (pi, OpenCode, …)
+# or your agent's own dir: ~/.claude/skills/agendactl (Claude Code) · ~/.codex/skills/agendactl (Codex)
 ```
-The skill bundles the binary, so installing the skill is all that's needed. (`git clone` does not quarantine files, so the binary runs as-is. If you downloaded a ZIP from a browser, clear quarantine once: `xattr -dr com.apple.quarantine ~/.claude/skills/agendactl/scripts/agendactl`.)
+The skill bundles the binary, so installing the skill is all that's needed — no `PATH` setup required.
+A skill-aware agent resolves the binary at `scripts/agendactl` relative to the skill's own directory. (`git clone` does not quarantine files, so the binary runs as-is. If you downloaded a ZIP from a browser, clear quarantine once: `xattr -dr com.apple.quarantine ~/.claude/skills/agendactl/scripts/agendactl`.)
 
 **As a plain CLI** (for your own scripts / cron) — put it on your `PATH`:
 ```bash

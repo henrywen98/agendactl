@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-smoke:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Build (universal2, ad-hoc signed)
+        run: ./skills/agendactl/scripts/build.sh
+
+      - name: Smoke test (contract only — no EventKit auth, no data written)
+        run: ./tests/smoke.sh
+
+      # roundtrip.sh is intentionally NOT run in CI: it needs macOS TCC
+      # authorization for Calendar/Reminders (a GUI grant) and writes to a
+      # real local store, neither of which exists on a headless runner.
