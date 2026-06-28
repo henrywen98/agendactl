@@ -1,18 +1,16 @@
 ---
 name: agendactl
 description: >-
-  Read and write macOS Calendar events AND Reminders/to-dos through the bundled `agendactl` CLI
-  (EventKit). Use this skill whenever the user wants to add, list, change, or delete a calendar
-  event or a reminder; check what is on a given day or this week; mark a to-do done; reschedule
-  something; change a meeting's time or location; or filter by date / list / calendar — even when
-  the words "calendar" or "reminder" are not said. Covers "remind me to send the report",
-  "what meetings do I have this week", "move the standup to Wednesday", "mark it done",
-  "set this to high priority", "cancel that event". Two domains, one CLI — route carefully:
-  CALENDAR = events with a start/end interval (meetings; NO "complete" concept) → `agendactl calendar …`;
-  REMINDERS = to-dos with a due date that can be completed → `agendactl reminders …`.
-  "Remind me to X" / "mark complete" / "to-do" / "what do I have to do today" → reminders;
-  "add a meeting" / "3–4pm" / "this week's schedule" / "cancel that event" → calendar.
-  Only ever call the CLI with arguments — never write scripts, never touch EventKit or system APIs.
+  Read & write macOS Calendar events and Reminders/to-dos via the bundled `agendactl` CLI (EventKit).
+  Use whenever the user wants to add, list, change, complete, or delete a calendar event or a reminder;
+  see what's on a day or this week; reschedule; change a meeting's time/location; or filter by
+  date/list/calendar — even if the words "calendar"/"reminder" aren't said. Examples: "remind me to
+  send the report", "what meetings this week", "move the standup to Wednesday", "mark it done",
+  "cancel that event". Two domains, one CLI, route by intent: CALENDAR = events with a start/end
+  interval (meetings; no "complete") → `agendactl calendar …`; REMINDERS = to-dos with a due date that
+  can be completed → `agendactl reminders …`. "Remind me to X"/"to-do"/"mark complete" → reminders;
+  "add a meeting"/"3–4pm"/"this week's schedule" → calendar. Only call the CLI with arguments — never
+  write scripts or touch EventKit/system APIs.
 ---
 
 # macOS Calendar & Reminders automation (agendactl)
