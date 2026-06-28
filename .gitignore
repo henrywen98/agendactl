@@ -1,0 +1,18 @@
+# local agent / session state (never publish)
+.claude/
+.pi/
+
+# macOS
+.DS_Store
+
+# build intermediates (the final universal binary `skills/ekctl/scripts/ekctl` IS committed)
+skills/ekctl/scripts/.ekctl-arm64
+skills/ekctl/scripts/.ekctl-x64
+*.o
+*.swiftmodule
+
+# editor / scratch
+*.swp
+*~
+.idea/
+.vscode/

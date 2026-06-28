@@ -1,0 +1,17 @@
+{
+  "name": "ekctl-mcp",
+  "version": "0.1.0",
+  "description": "Thin MCP (stdio) adapter exposing the ekctl CLI (macOS Calendar & Reminders) as MCP tools.",
+  "type": "module",
+  "main": "index.mjs",
+  "bin": {
+    "ekctl-mcp": "./index.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "license": "MIT"
+}
